@@ -27,6 +27,21 @@ my-sensor-dashboard/
 ├── README.md
 ```
 
+## Schema for Sensor Logs
+The `sensor_logs` table in the Neon database has the following schema:
+
+```sql
+DROP TABLE IF EXISTS sensor_logs;
+
+CREATE TABLE sensor_logs (
+  id SERIAL PRIMARY KEY,
+  software_version TEXT,
+  sensor_type TEXT, -- Calculated as 'PMS' or 'DHT'
+  data JSONB,       -- Stores the sensordatavalues array
+  created_at TIMESTAMP DEFAULT NOW()
+);
+```
+
 ## Test requests to  production
 
 To test the API endpoint in the production environment, you can use the following `curl` command:
