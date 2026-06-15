@@ -8,15 +8,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const { type, limit = '20' } = req.query;
 
   try {
-    const data = await sql`
-      SELECT * FROM sensor_logs
-      WHERE sensor_type = ${String(type)}
-      ORDER BY created_at DESC
-      LIMIT ${parseInt(limit as string)}
-    `;
+    let data;
+    if (type) {
+      // Filtered query
+      data = await sql`
+        SELECT * FROM sensor_logs
+        WHERE sensor_type = ${String(type)}
+        ORDER BY created_at DESC
+        LIMIT ${parseInt(limit as string)}
+      `;
+    } else {
+      // Return everything if no type is specified
+      data = await sql`
+        SELECT * FROM sensor_logs
+        ORDER BY created_at DESC
+        LIMIT ${parseInt(limit as string)}
+      `;
+    }
 
     return res.status(200).json(data);
   } catch (error) {
+    console.error("Fetch Error:", error);
     return res.status(500).json({ error: 'Failed to fetch sensor data' });
   }
 }
