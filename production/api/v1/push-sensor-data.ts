@@ -3,7 +3,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { env } from 'bun';
 
 // Ensure DATABASE_URL is defined at runtime
-const databaseUrl = env.DATABASE_URL as string;
+const databaseUrl = env.PRODUCTION_DATABASE_URL as string;
 
 // Initialize Neon client
 const sql = neon(databaseUrl);
