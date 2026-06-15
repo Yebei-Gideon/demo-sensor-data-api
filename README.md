@@ -89,20 +89,19 @@ OR
 
 ### Post Sensor Data to Production
 
-[https://demo-sensor-data-production-api.vercel.app/v1/push-sensor-data](https://demo-sensor-data-production-api.vercel.app/v1/push-sensor-data)
+[https://demo-sensor-data-production-api.vercel.app/api/v1/push-sensor-data](https://demo-sensor-data-production-api.vercel.app/api/v1/push-sensor-data)
 
 ### Get Sensor Data from Production
 
-[https://demo-sensor-data-production-api.vercel.app/v1/get-sensor-data](https://demo-sensor-data-production-api.vercel.app/v1/get-sensor-data)
+[https://demo-sensor-data-production-api.vercel.app/api/v1/get-sensor-data](https://demo-sensor-data-production-api.vercel.app/api/v1/get-sensor-data)
 
 
 ## Staging Endpoint
 
 ### Post Sensor Data to Staging
 
-[https://demo-sensor-data-staging-api.vercel.app/v1/push-sensor-data](https://demo-sensor-data-staging-api.vercel.app/v1/push-sensor-data)
+[https://demo-sensor-data-staging-api.vercel.app/api/v1/push-sensor-data](https://demo-sensor-data-staging-api.vercel.app/api/v1/push-sensor-data)
 
 ### Get Sensor Data from Staging
 
-[https://demo-sensor-data-staging-api.vercel.app/v1/get-sensor-data](https://demo-sensor-data-staging-api.vercel.app/v1/get-sensor-data)
-
+[https://demo-sensor-data-staging-api.vercel.app/api/v1/get-sensor-data](https://demo-sensor-data-staging-api.vercel.app/api/v1/get-sensor-data)
