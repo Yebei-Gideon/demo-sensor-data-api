@@ -1,0 +1,28 @@
+# Project Structure for Sensor Dashboard
+
+```bash
+my-sensor-dashboard/
+├── production/            # Vercel Project: "sensor-dashboard-prod"
+│   ├── api/               # Vercel Serverless Functions
+│   │   └── v1/
+│   │       └── push-sensor-data.ts
+│   ├── src/               # React Frontend code
+│   ├── package.json       # Dependencies for Prod
+│   └── vercel.json        # Prod-specific config (optional)
+│
+├── staging/               # Vercel Project: "sensor-dashboard-staging"
+│   ├── api/
+│   │   └── v1/
+│   │       └── push-sensor-data.ts
+│   ├── src/
+│   ├── package.json       # Dependencies for Staging
+│   └── vercel.json
+│
+├── dashboard/              # Shared code for both environments
+│   ├── components/         # React components
+│   ├── utils/              # Utility functions
+│   └── hooks/              # Custom React hooks
+│
+├── .gitignore
+├── README.md
+```
