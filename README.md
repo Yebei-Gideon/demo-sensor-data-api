@@ -28,6 +28,7 @@ my-sensor-dashboard/
 ```
 
 ## Schema for Sensor Logs
+
 The `sensor_logs` table in the Neon database has the following schema:
 
 ```sql
@@ -42,46 +43,66 @@ CREATE TABLE sensor_logs (
 );
 ```
 
-## Test requests to  production
+# API Endpoint: `/v1/push-sensor-data`
 
-To test the API endpoint in the production environment, you can use the following `curl` command:
+This endpoint accepts POST requests with the following JSON payload:
 
-```bash
-curl -X POST https://demo-sensor-data-api.vercel.app/api/v1/push-sensor-data \
-  -H "Content-Type: application/json" \
-  -d '{
-    "software_version": "NRZ-2020-129",
-    "sensordatavalues": [
-      {
-        "value_type": "P0",
-        "value": 4
-      },
-      {
-        "value_type": "P1",
-        "value": 5
-      },
-      {
-        "value_type": "P2",
-        "value": 5
-      }
-    ]
-  }'
+```json
+{
+  "software_version": "NRZ-2020-129",
+  "sensordatavalues": [
+    {
+      "value_type": "P0",
+      "value": 4
+    },
+    {
+      "value_type": "P1",
+      "value": 5
+    },
+    {
+      "value_type": "P2",
+      "value": 5
+    }
+  ]
+}
 ```
 
-```bash
-curl -X POST https://demo-sensor-data-api.vercel.app/api/v1/push-sensor-data \
-  -H "Content-Type: application/json" \
-  -d '{
-    "software_version": "NRZ-2020-129",
-    "sensordatavalues": [
-      {
-        "value_type": "temperature",
-        "value": 26.6
-      },
-      {
-        "value_type": "humidity",
-        "value": 53.1
-      }
-    ]
-  }'
+OR
+
+```json
+{
+  "software_version": "NRZ-2020-129",
+  "sensordatavalues": [
+    {
+      "value_type": "temperature",
+      "value": 26.6
+    },
+    {
+      "value_type": "humidity",
+      "value": 53.1
+    }
+  ]
+}
 ```
+
+## Production Endpoint
+
+### Post Sensor Data to Production
+
+[https://demo-sensor-data-production-api.vercel.app/v1/push-sensor-data](https://demo-sensor-data-production-api.vercel.app/v1/push-sensor-data)
+
+### Get Sensor Data from Production
+
+[https://demo-sensor-data-production-api.vercel.app/v1/get-sensor-data](https://demo-sensor-data-production-api.vercel.app/v1/get-sensor-data)
+
+
+## Staging Endpoint
+
+### Post Sensor Data to Staging
+
+[https://demo-sensor-data-staging-api.vercel.app/v1/push-sensor-data](https://demo-sensor-data-staging-api.vercel.app/v1/push-sensor-data)
+
+### Get Sensor Data from Staging
+
+[https://demo-sensor-data-staging-api.vercel.app/v1/get-sensor-data](https://demo-sensor-data-staging-api.vercel.app/v1/get-sensor-data)
+
