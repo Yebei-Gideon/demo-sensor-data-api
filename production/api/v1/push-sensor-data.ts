@@ -1,17 +1,32 @@
 import { neon } from '@neondatabase/serverless';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { env } from 'bun';
 
-// Define explicit interfaces for incoming sensor payloads
+// Ensure DATABASE_URL is defined at runtime
+const databaseUrl = env.DATABASE_URL as string;
+
+// Initialize Neon client
+const sql = neon(databaseUrl);
+
+// Define TypeScript interfaces for incoming sensor data
 interface SensorDataValue {
   value_type: string;
   value: string | number;
 }
 
+// Define the expected structure of the incoming request body
 interface IncomingSensorBody {
   software_version?: string;
   sensordatavalues?: SensorDataValue[];
 }
 
+/**
+ * Handles incoming POST requests with sensor data, validates the payload, determines sensor type, and inserts structured logs into the Neon database. Implements robust error handling and structured logging for observability.
+ *
+ * @param req - The incoming HTTP request containing sensor data in the body
+ * @param res - The HTTP response object
+ * @returns A promise resolving to void
+ */
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
   const timestamp = new Date().toISOString();
   const requestId = req.headers['x-vercel-id'] || 'local';
@@ -25,7 +40,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     return;
   }
 
-  const databaseUrl = process.env.DATABASE_URL;
   if (!databaseUrl) {
     console.error(`[${timestamp}] [ERROR] [RID:${requestId}] DATABASE_URL environment variable is missing`);
     res.status(500).json({ error: 'Database configuration missing' });
@@ -48,8 +62,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
   console.log(`[${timestamp}] [INFO] [RID:${requestId}] Processing logs. Version: ${software_version || 'unknown'}, Type: ${sensorType}, Elements: ${sensordatavalues.length}`);
 
   try {
-    const sql = neon(databaseUrl);
-
     await sql`
       INSERT INTO sensor_logs (software_version, sensor_type, data, created_at)
       VALUES (${software_version || null}, ${sensorType}, ${JSON.stringify(sensordatavalues)}, NOW())
