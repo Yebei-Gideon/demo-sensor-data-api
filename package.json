@@ -1,0 +1,18 @@
+{
+  "name": "demo-sensor-data-api",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "^1.3.14"
+  },
+  "workspaces": [
+    "dashboard",
+    "staging",
+    "production",
+    "dashboard-old"
+  ],
+  "peerDependencies": {
+    "typescript": "^5"
+  }
+}
