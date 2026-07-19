@@ -1,112 +1,45 @@
 import { useState, useMemo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
+import { Area, AreaChart, CartesianGrid, XAxis, YAxis, Brush, Legend } from "recharts";
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Maximize2, Thermometer, Droplets } from "lucide-react";
+import { safeFormatDate } from "@/lib/utils/formatters";
+import { AnalyticsStatCard } from "./AnalyticsStatCard";
 
 type Point = { timestamp: number; temperature: number; humidity: number };
 
 const chartConfig = {
-  temperature: {
-    label: "Temperature",
-    color: "#f97316", // Explicit Bright Orange
-  },
-  humidity: {
-    label: "Humidity",
-    color: "#0ea5e9", // Explicit Bright Blue
-  },
+  temperature: { label: "Temperature", color: "#ea580c" },
+  humidity: { label: "Humidity", color: "#0284c7" },
 } satisfies ChartConfig;
 
-// Robust Date formatter that handles both numeric and string-based epochs safely
-const safeFormatDate = (tick: any, style: 'axis' | 'tooltip' = 'axis') => {
-  if (tick === undefined || tick === null) return "—";
-
-  let parsedTick = tick;
-  if (typeof tick === "string") {
-    parsedTick = parseFloat(tick);
-  }
-
-  const date = typeof parsedTick === "number" && parsedTick < 10000000000
-      ? new Date(parsedTick * 1000)
-      : new Date(parsedTick);
-
-  if (isNaN(date.getTime())) return "—";
-
-  if (style === 'axis') {
-    return new Intl.DateTimeFormat(navigator.language, {
-      hour: '2-digit',
-      minute: '2-digit'
-    }).format(date);
-  }
-
-  return new Intl.DateTimeFormat(navigator.language, {
-    dateStyle: 'medium',
-    timeStyle: 'short'
-  }).format(date);
-};
-
-// Core Area chart extracted for reusability with smooth gradient fills and dual Y-axes
-function CoreEnvironmentChart({ data }: { data: Point[] }) {
+function CoreEnvironmentChart({ data, showBrush = false }: { data: Point[], showBrush?: boolean }) {
   return (
-      <ChartContainer config={chartConfig} className="h-full w-full">
-        <AreaChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-          <defs>
-            <linearGradient id="tempGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#f97316" stopOpacity={0.25} />
-              <stop offset="100%" stopColor="#f97316" stopOpacity={0} />
-            </linearGradient>
-            <linearGradient id="humGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#0ea5e9" stopOpacity={0.25} />
-              <stop offset="100%" stopColor="#0ea5e9" stopOpacity={0} />
-            </linearGradient>
-          </defs>
-          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-border)" />
-          <XAxis
-              dataKey="timestamp"
-              tickFormatter={(tick) => safeFormatDate(tick, 'axis')}
-              tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
-              tickLine={false}
-              axisLine={false}
-              dy={10}
-          />
-          <YAxis
-              yAxisId="left"
-              tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
-              tickLine={false}
-              axisLine={false}
-          />
-          <YAxis
-              yAxisId="right"
-              orientation="right"
-              tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
-              tickLine={false}
-              axisLine={false}
-              dx={10}
-          />
-          <ChartTooltip
-              cursor={{ stroke: "var(--color-border)", strokeWidth: 1 }}
-              content={<ChartTooltipContent labelFormatter={(val) => safeFormatDate(val, 'tooltip')} />}
-          />
-          <Area
-              yAxisId="left"
-              type="monotone"
-              dataKey="temperature"
-              stroke="var(--color-temperature)"
-              strokeWidth={2}
-              fill="url(#tempGrad)"
-          />
-          <Area
-              yAxisId="right"
-              type="monotone"
-              dataKey="humidity"
-              stroke="var(--color-humidity)"
-              strokeWidth={2}
-              fill="url(#humGrad)"
-          />
-        </AreaChart>
-      </ChartContainer>
+    <ChartContainer config={chartConfig} className="h-full w-full text-muted-foreground">
+      <AreaChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: showBrush ? 20 : 0 }}>
+        <defs>
+          <linearGradient id="tempGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="var(--color-temperature)" stopOpacity={0.3} />
+            <stop offset="100%" stopColor="var(--color-temperature)" stopOpacity={0} />
+          </linearGradient>
+          <linearGradient id="humGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="var(--color-humidity)" stopOpacity={0.3} />
+            <stop offset="100%" stopColor="var(--color-humidity)" stopOpacity={0} />
+          </linearGradient>
+        </defs>
+        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+        <Legend verticalAlign="top" height={36} iconType="circle" wrapperStyle={{ fontSize: '14px', fontWeight: 500, color: 'currentColor' }} />
+        <XAxis dataKey="timestamp" tickFormatter={(tick) => safeFormatDate(tick, 'axis')} tick={{ fontSize: 12, fill: "currentColor", opacity: 0.8 }} tickLine={false} axisLine={false} dy={10} />
+        <YAxis yAxisId="left" tick={{ fontSize: 12, fill: "currentColor", opacity: 0.8 }} tickLine={false} axisLine={false} />
+        <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 12, fill: "currentColor", opacity: 0.8 }} tickLine={false} axisLine={false} dx={10} />
+        <ChartTooltip cursor={{ stroke: "hsl(var(--border))", strokeWidth: 2 }} content={<ChartTooltipContent labelFormatter={(val) => safeFormatDate(val, 'tooltip')} />} />
+        <Area yAxisId="left" type="monotone" dataKey="temperature" name="Temperature (°C)" stroke="var(--color-temperature)" strokeWidth={3} fill="url(#tempGrad)" activeDot={{ r: 6, strokeWidth: 0 }} />
+        <Area yAxisId="right" type="monotone" dataKey="humidity" name="Relative Humidity (%)" stroke="var(--color-humidity)" strokeWidth={3} fill="url(#humGrad)" activeDot={{ r: 6, strokeWidth: 0 }} />
+        {showBrush && <Brush dataKey="timestamp" height={30} stroke="hsl(var(--border))" fill="hsl(var(--background))" tickFormatter={(tick) => safeFormatDate(tick, 'axis')} />}
+      </AreaChart>
+    </ChartContainer>
   );
 }
 
@@ -115,10 +48,7 @@ export function EnvironmentChart({ data }: { data: Point[] }) {
 
   const analytics = useMemo(() => {
     if (!data || data.length === 0) return { maxTemp: 0, avgTemp: 0, maxHum: 0, avgHum: 0 };
-    let sumTemp = 0;
-    let maxTemp = -Infinity;
-    let sumHum = 0;
-    let maxHum = -Infinity;
+    let sumTemp = 0, maxTemp = -Infinity, sumHum = 0, maxHum = -Infinity;
 
     data.forEach(p => {
       sumTemp += p.temperature;
@@ -136,68 +66,47 @@ export function EnvironmentChart({ data }: { data: Point[] }) {
   }, [data]);
 
   return (
-      <Card className="border-border/50 shadow-sm relative group">
-        <CardHeader className="pb-4 flex flex-row items-start justify-between space-y-0">
-          <div className="space-y-1">
-            <CardTitle className="text-base font-semibold">Climate Dynamics</CardTitle>
-            <CardDescription>Microclimate ambient metrics from high-precision DHT hardware sensors.</CardDescription>
-          </div>
+    <Card className="border-border/50 shadow-sm relative group focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+      <CardHeader className="pb-4 flex flex-row items-start justify-between space-y-0">
+        <div className="space-y-1">
+          <CardTitle className="text-lg font-semibold">Climate Dynamics</CardTitle>
+          <CardDescription className="text-sm">Microclimate ambient metrics from high-precision DHT hardware sensors.</CardDescription>
+        </div>
 
-          <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            <DialogTrigger asChild>
-              <Button variant="outline" size="icon" className="h-8 w-8 opacity-70 group-hover:opacity-100 transition-opacity">
-                <Maximize2 className="h-4 w-4" />
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-4xl w-[92vw]">
-              <DialogHeader>
-                <DialogTitle>Climate Dynamics Analysis</DialogTitle>
-                <DialogDescription>
-                  Historical microclimate metrics from hardware sensors.
-                </DialogDescription>
-              </DialogHeader>
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+          <DialogTrigger asChild>
+            <Button variant="outline" size="icon" className="h-9 w-9 opacity-70 hover:opacity-100 transition-opacity" aria-label="Expand Climate Chart">
+              <Maximize2 className="h-4 w-4" />
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-5xl w-[95vw] max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="text-xl">Climate Dynamics Analysis</DialogTitle>
+              <DialogDescription>Historical microclimate metrics. Drag the timeline below the chart to zoom and pan.</DialogDescription>
+            </DialogHeader>
 
-              {/* Analytics Metric Blocks */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 my-2">
-                <div className="rounded-lg border bg-card p-3 shadow-sm">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
-                    <Thermometer className="w-4 h-4 text-orange-500" /> Peak Temp
-                  </div>
-                  <div className="text-2xl font-bold">{analytics.maxTemp}°C</div>
-                </div>
-                <div className="rounded-lg border bg-card p-3 shadow-sm">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
-                    <Thermometer className="w-4 h-4 text-muted-foreground" /> Avg Temp
-                  </div>
-                  <div className="text-2xl font-bold">{analytics.avgTemp}°C</div>
-                </div>
-                <div className="rounded-lg border bg-card p-3 shadow-sm">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
-                    <Droplets className="w-4 h-4 text-blue-500" /> Peak Hum
-                  </div>
-                  <div className="text-2xl font-bold">{analytics.maxHum}%</div>
-                </div>
-                <div className="rounded-lg border bg-card p-3 shadow-sm">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
-                    <Droplets className="w-4 h-4 text-muted-foreground" /> Avg Hum
-                  </div>
-                  <div className="text-2xl font-bold">{analytics.avgHum}%</div>
-                </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 my-4">
+              <AnalyticsStatCard title="Peak Temp" value={`${analytics.maxTemp}°C`} icon={Thermometer} iconColorClass="text-orange-600" />
+              <AnalyticsStatCard title="Avg Temp" value={`${analytics.avgTemp}°C`} icon={Thermometer} iconColorClass="text-muted-foreground" />
+              <AnalyticsStatCard title="Peak Hum" value={`${analytics.maxHum}%`} icon={Droplets} iconColorClass="text-blue-600" />
+              <AnalyticsStatCard title="Avg Hum" value={`${analytics.avgHum}%`} icon={Droplets} iconColorClass="text-muted-foreground" />
+            </div>
+
+            <div className="border rounded-xl p-4 sm:p-6 bg-card/30">
+              <div className="sr-only">Interactive climate chart showing historical temperature averaging {analytics.avgTemp} degrees and humidity averaging {analytics.avgHum} percent.</div>
+              <div className="h-[50vh] min-h-[400px] w-full" role="graphics-document" aria-label="Expanded Climate Data Chart">
+                <CoreEnvironmentChart data={data} showBrush={true} />
               </div>
-
-              <div className="border rounded-lg p-2 sm:p-4 bg-card/30">
-                <div className="h-[50vh] w-full">
-                  <CoreEnvironmentChart data={data} />
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
-        </CardHeader>
-        <CardContent className="px-2 sm:p-6">
-          <div className="h-72 w-full">
-            <CoreEnvironmentChart data={data} />
-          </div>
-        </CardContent>
-      </Card>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </CardHeader>
+      <CardContent className="px-2 sm:p-6 pt-0">
+        <div className="sr-only">Climate dynamics chart tracking temperature and humidity.</div>
+        <div className="h-[400px] w-full" role="graphics-document" aria-label="Climate Data Chart">
+          <CoreEnvironmentChart data={data} />
+        </div>
+      </CardContent>
+    </Card>
   );
 }
