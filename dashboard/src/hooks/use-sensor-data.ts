@@ -4,9 +4,8 @@ import type {
   SensorLog,
   SensorFetchParams,
 } from "@/types/sensor";
-import process from "process";
 
-const { VITE_STAGING_API_URL, VITE_PRODUCTION_API_URL } = process.env
+const { VITE_STAGING_API_URL, VITE_PRODUCTION_API_URL } = import.meta.env;
 
 if (!VITE_STAGING_API_URL || !VITE_PRODUCTION_API_URL) {
   throw new Error(
