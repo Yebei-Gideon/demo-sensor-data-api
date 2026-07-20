@@ -13,12 +13,12 @@ CREATE TABLE sensor_logs (
 );
 ```
 
-# Test requests to push data to production
+# Test requests to push data to staging
 
-To test the API endpoint in the production environment, you can use the following `curl` command:
+To test the API endpoint in the staging environment, you can use the following `curl` command:
 
 ```bash
-curl -X POST https://demo-sensor-data-production-api.vercel.app/api/v1/push-sensor-data \
+curl -X POST https://demo-sensor-data-staging-api.vercel.app/api/v1/push-sensor-data \
   -H "Content-Type: application/json" \
   -d '{
     "software_version": "NRZ-2020-129",
@@ -40,7 +40,7 @@ curl -X POST https://demo-sensor-data-production-api.vercel.app/api/v1/push-sens
 ```
 
 ```bash
-curl -X POST https://demo-sensor-data-production-api.vercel.app/api/v1/push-sensor-data \
+curl -X POST https://demo-sensor-data-staging-api.vercel.app/api/v1/push-sensor-data \
   -H "Content-Type: application/json" \
   -d '{
     "software_version": "NRZ-2020-129",

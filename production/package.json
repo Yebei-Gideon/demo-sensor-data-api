@@ -1,6 +1,5 @@
 {
-  "name": "production",
-  "module": "index.ts",
+  "name": "staging",
   "type": "module",
   "private": true,
   "devDependencies": {

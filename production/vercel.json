@@ -3,7 +3,7 @@
   "bunVersion": "1.x",
   "headers": [
     {
-      "source": "/api/(.*)",
+      "source": "/(.*)",
       "headers": [
         {
           "key": "Access-Control-Allow-Origin",
@@ -11,11 +11,11 @@
         },
         {
           "key": "Access-Control-Allow-Methods",
-          "value": "GET,POST,OPTIONS"
+          "value": "GET,POST,OPTIONS,PUT,PATCH,DELETE"
         },
         {
           "key": "Access-Control-Allow-Headers",
-          "value": "Content-Type"
+          "value": "X-Requested-With, Content-Type, Accept, Authorization"
         }
       ]
     }
