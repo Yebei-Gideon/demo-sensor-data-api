@@ -1,8 +1,4 @@
-import type {
-  PaginatedResponse,
-  SensorFetchParams,
-  SensorLog,
-} from '@/types/sensor';
+import type { PaginatedResponse, SensorLog } from '#/types/sensor';
 import { useCallback, useEffect, useState } from 'react';
 
 const { VITE_STAGING_API_URL, VITE_PRODUCTION_API_URL } = import.meta.env;
@@ -20,117 +16,172 @@ const ENVIRONMENTS = {
 
 export type Environment = keyof typeof ENVIRONMENTS;
 
-export interface ExtendedFetchParams extends Omit<SensorFetchParams, 'type'> {
-  software_version?: string;
-}
-
-export function useSensorData(initialParams: ExtendedFetchParams = {}) {
-  const [data, setData] = useState<PaginatedResponse<SensorLog> | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+export function useSensorData() {
+  const [logs, setLogs] = useState<SensorLog[]>([]);
+  const [devices, setDevices] = useState<string[]>([]);
+  const [currentVersion, setCurrentVersion] = useState<string>('');
   const [env, setEnv] = useState<Environment>('staging');
 
-  // Dynamic list populated straight from API log signatures
-  const [devices, setDevices] = useState<string[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [isStreaming, setIsStreaming] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const [params, setParams] = useState<ExtendedFetchParams>({
-    page: 1,
-    limit: 100,
-    ...initialParams,
-  });
+  // Explicit handler to clear dynamic cache registries when toggling cloud clusters
+  const handleEnvChange = useCallback((targetEnv: Environment) => {
+    setEnv(targetEnv);
+    setDevices([]);
+    setCurrentVersion('');
+  }, []);
 
-  const fetchLogs = useCallback(
-    async (currentParams: ExtendedFetchParams, activeEnv: Environment) => {
+  useEffect(() => {
+    let isMounted = true;
+
+    async function streamTelemetryEngine() {
       setLoading(true);
       setError(null);
-      try {
-        const url = new URL(ENVIRONMENTS[activeEnv]);
 
-        if (currentParams.software_version) {
-          url.searchParams.append(
-            'software_version',
-            currentParams.software_version,
-          );
+      let activeVersion = currentVersion;
+      let existingDevices = devices;
+
+      // STEP 1: Dynamic Discovery (Runs if no active version signature is known)
+      if (existingDevices.length === 0 || !activeVersion) {
+        try {
+          const discoveryUrl = new URL(ENVIRONMENTS[env]);
+          discoveryUrl.searchParams.append('page', '1');
+          discoveryUrl.searchParams.append('limit', '100');
+
+          const response = await fetch(discoveryUrl.toString());
+          if (!response.ok)
+            throw new Error(
+              `Discovery Error: ${response.statusText}`,
+            );
+          const json: PaginatedResponse<SensorLog> =
+            await response.json();
+
+          if (!isMounted) return;
+
+          const discovered = json.results
+            .map((r) => r.software_version)
+            .filter(
+              (v): v is string =>
+                typeof v === 'string' && v.length > 0,
+            );
+
+          const uniqueDevices = Array.from(new Set(discovered));
+
+          if (uniqueDevices.length > 0) {
+            setDevices(uniqueDevices);
+            activeVersion = uniqueDevices[0];
+            setCurrentVersion(activeVersion);
+          } else {
+            // Fallback scenario if backend data tables are empty
+            setLogs(json.results);
+            setLoading(false);
+            return;
+          }
+        } catch (err) {
+          if (isMounted)
+            setError(
+              err instanceof Error
+                ? err.message
+                : 'Discovery engine failed',
+            );
+          setLoading(false);
+          return;
         }
-        url.searchParams.append(
-          'page',
-          (currentParams.page || 1).toString(),
+      }
+
+      // STEP 2: Incremental Multi-page Core Background Streamer
+      setIsStreaming(true);
+      setLogs([]); // Wipe out historical frames to avoid layout bleeding cross-device
+
+      let nextCursor: string | null = null;
+      let pageIndex = 1;
+
+      try {
+        // Render Page 1 Instantly
+        const primaryUrl = new URL(ENVIRONMENTS[env]);
+        primaryUrl.searchParams.append(
+          'software_version',
+          activeVersion,
         );
-        url.searchParams.append(
-          'limit',
-          (currentParams.limit || 100).toString(),
-        );
+        primaryUrl.searchParams.append('page', '1');
+        primaryUrl.searchParams.append('limit', '100');
 
-        const response = await fetch(url.toString());
-        if (!response.ok)
-          throw new Error(`API Error: ${response.statusText}`);
+        const firstPageResponse = await fetch(primaryUrl.toString());
+        if (!firstPageResponse.ok)
+          throw new Error(
+            `Primary Fetch Failed: ${firstPageResponse.statusText}`,
+          );
+        const firstPageJson: PaginatedResponse<SensorLog> =
+          await firstPageResponse.json();
 
-        const json: PaginatedResponse<SensorLog> =
-          await response.json();
-        setData(json);
+        if (!isMounted) return;
 
-        // Dynamically extract unique devices from results and append to known list
-        if (json.results && json.results.length > 0) {
-          setDevices((prev) => {
-            const discovered = json.results
-              .map((r) => r.software_version)
-              .filter(
-                (v): v is string =>
-                  typeof v === 'string' && v.length > 0,
-              );
-            return Array.from(new Set([...prev, ...discovered]));
-          });
+        setLogs(firstPageJson.results);
+        setLoading(false); // First page successfully mounted. Unlock Layout viewports.
+
+        nextCursor = firstPageJson.next;
+        pageIndex = 2;
+
+        // Stream and swallow historical logs sequentially in the background
+        while (nextCursor && isMounted) {
+          const parsedCursor = new URL(nextCursor);
+          const cursorPage =
+            parsedCursor.searchParams.get('page') ||
+            pageIndex.toString();
+
+          const streamUrl = new URL(ENVIRONMENTS[env]);
+          streamUrl.searchParams.append(
+            'software_version',
+            activeVersion,
+          );
+          streamUrl.searchParams.append('page', cursorPage);
+          streamUrl.searchParams.append('limit', '100');
+
+          const backgroundResponse = await fetch(
+            streamUrl.toString(),
+          );
+          if (!backgroundResponse.ok) break; // Break out safely if index tails out
+
+          const backgroundJson: PaginatedResponse<SensorLog> =
+            await backgroundResponse.json();
+          if (!isMounted) return;
+
+          // Performance Optimization: Update list array reference natively to preserve re-rendering thread limits
+          setLogs((prev) => [...prev, ...backgroundJson.results]);
+          nextCursor = backgroundJson.next;
+          pageIndex = Number(cursorPage) + 1;
         }
       } catch (err) {
-        setError(
-          err instanceof Error
-            ? err.message
-            : 'An anonymous error occurred',
-        );
+        if (isMounted)
+          setError(
+            err instanceof Error ? err.message : 'Streaming fault',
+          );
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+          setIsStreaming(false);
+        }
       }
-    },
-    [],
-  );
-
-  // Automatically default to the first discovered device if nothing is selected yet
-  useEffect(() => {
-    if (devices.length > 0 && !params.software_version) {
-      setParams((prev) => ({
-        ...prev,
-        software_version: devices[0],
-        page: 1,
-      }));
     }
-  }, [devices, params.software_version]);
 
-  useEffect(() => {
-    fetchLogs(params, env);
-  }, [params, env, fetchLogs]);
+    streamTelemetryEngine();
+
+    return () => {
+      isMounted = false; // Safely discards overlapping async callbacks on device/env updates
+    };
+  }, [env, currentVersion]);
 
   return {
-    data: data?.results || [],
-    devices, // Exposed to feed into the ControlBar component
-    pagination: {
-      count: data?.count || 0,
-      next: data?.next,
-      previous: data?.previous,
-      currentPage: params.page || 1,
-      limit: params.limit || 100,
-    },
-    loading,
-    error,
+    data: logs,
+    devices,
     env,
-    setEnv,
-    setPage: (page: number) => setParams((prev) => ({ ...prev, page })),
-    setVersion: (version: string) =>
-      setParams((prev) => ({
-        ...prev,
-        software_version: version,
-        page: 1,
-      })),
-    currentParams: params,
-    refresh: () => fetchLogs(params, env),
+    setEnv: handleEnvChange,
+    currentVersion,
+    setVersion: setCurrentVersion,
+    loading,
+    isStreaming,
+    error,
   };
 }
