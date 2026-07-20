@@ -4,10 +4,19 @@ import type {
   SensorLog,
   SensorFetchParams,
 } from "@/types/sensor";
+import process from "process";
+
+const { VITE_STAGING_API_URL, VITE_PRODUCTION_API_URL } = process.env
+
+if (!VITE_STAGING_API_URL || !VITE_PRODUCTION_API_URL) {
+  throw new Error(
+    "Environment variables VITE_STAGING_API_URL and VITE_PRODUCTION_API_URL must be defined",
+  );
+}
 
 const ENVIRONMENTS = {
-  staging: "http://localhost:3000/v1/get-sensor-data",
-  production: "https://your-production-url.vercel.app/v1/get-sensor-data", // Update this when deployed
+  staging: VITE_STAGING_API_URL as string,
+  production: VITE_PRODUCTION_API_URL as string
 };
 
 export type Environment = keyof typeof ENVIRONMENTS;
