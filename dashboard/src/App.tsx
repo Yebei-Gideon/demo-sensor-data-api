@@ -15,7 +15,6 @@ function AppContent() {
         env,
         setEnv,
         currentParams,
-        setType,
         setVersion,
         pagination,
         setPage,

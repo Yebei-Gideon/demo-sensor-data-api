@@ -1,5 +1,4 @@
-// src/components/dashboard/ThemeToggle.tsx
-import { Moon, Sun, Laptop } from "lucide-react";
+import { Moon, Sun } from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,6 +13,7 @@ export function ThemeToggle() {
 
     return (
         <DropdownMenu>
+            {/* @ts-expect-error Radix UI type mismatch for asChild */}
             <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="icon">
                     <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />

@@ -6,7 +6,14 @@ export function EnvSwitcher({ env, setEnv }: { env: Environment; setEnv: (e: Env
     return (
         <div className="flex items-center gap-2">
             <Server className="h-4 w-4 text-muted-foreground" />
-            <Select value={env} onValueChange={(val: Environment) => setEnv(val)}>
+            <Select 
+                value={env} 
+                onValueChange={(val: string | null) => {
+                    if (val) {
+                        setEnv(val as Environment);
+                    }
+                }}
+            >
                 <SelectTrigger className="w-[140px]">
                     <SelectValue placeholder="Environment" />
                 </SelectTrigger>
